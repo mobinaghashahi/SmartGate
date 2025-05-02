@@ -65,6 +65,7 @@ void setup() {
   //میره تو کلید متغییر
   pinMode(A2,INPUT);
   digitalWrite(A2,HIGH);
+  
   //در یک
   pinMode(A4,OUTPUT);
   digitalWrite(A4,HIGH);
@@ -268,7 +269,18 @@ void openDoor(int whichDoor){
   Serial.println("openedDoor");
 }
 
-
+void checkSerialCommands(){
+  if (Serial.available() > 0) {
+    Serial.println("a Serial Command Is Available");
+    String command = Serial.readStringUntil('\n');
+    if (command == "changeStateLight") {
+        changeLightState();
+    }
+    else if (command == "openDoor1") {
+        openDoor(1);
+    }
+  }
+}
 
 
 
@@ -351,13 +363,9 @@ void loop() {
 
 
   //ارتباط پورت سریال با کامپیوتر جهت دریافت دستورات وب
-  if (Serial.available() > 0) {
-    Serial.println("yes yes yes");
-    String command = Serial.readStringUntil('\n');
-    if (command == "open") {
-        openDoor(1);
-    }
-  }
+  checkSerialCommands();
+  
+
 
 
     
