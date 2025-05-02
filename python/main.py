@@ -1,15 +1,20 @@
 import serial
 import requests
 import datetime
+import time
+import os
+from dotenv import load_dotenv
 
+# بارگذاری متغیرهای محیطی از فایل .env
+load_dotenv()
 
 def sendSMS(number, password):
     # URL API
-    url = "https://api2.ippanel.com/api/v1/sms/pattern/normal/send"
+    urlSMS = os.getenv("URL_SMS_PANEL")
 
     # داده‌های JSON که باید ارسال شوند
     payload = {
-        "code": "yourPatternCode",
+        "code": os.getenv("API_KEY_SMS_PANEL"),
         "sender": "+983000505",
         "recipient": number,
         "variable": {
@@ -19,7 +24,7 @@ def sendSMS(number, password):
 
     headers = {
         "Accept": "*/*",
-        "apikey": "yourSmsApiCode",
+        "apikey": os.getenv("API_KEY_TELEGRAM_BOT"),  # جایگزین با API Key واقعی
         "Content-Type": "application/json"
     }
     # ارسال درخواست POST
@@ -28,31 +33,28 @@ def sendSMS(number, password):
         print("SMS sent to " + number)
     print(response.status_code)
 
-def checkOpenDoorInHost():
-    print("checkDoorInHost")
-    url="yourUrl"
-    response = requests.post(url, data={'key': 'yourKey'})
-    print(response.status_code)
-    print(response.text)
-    if response.text=="1":
-        ser.write(b"open\n")
 def checkDoorStatus():
-
-    print("enter to checkDoorStatus")
-    url = "yourUrl"
-    response = requests.post(url, data={'key': 'yourKey','action':'readStatus'})
-    data=response.json()
-    if data['doorStatus'] == '1':
-        print("Door status is open")
-        response = requests.post(url, data={'key': 'yourKey', 'action': 'sendACK'})
+    try:
+        print("enter to checkDoorStatus")
+        url = os.getenv("URL_CHECK_DOOR_STATUS")
+        response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE")})
         if response.status_code == 200:
-            print("yes")
-            ser.write(b"open\n")
+            print("Response OK!!")
+            print(response.text)
+            data=response.json()
+            if data['doorStatus'] == '1':
+                print("Door status is open")
+                ser.write(b"openDoor1\n")
+            elif data['lightStatus'] == '1':
+                print("changeStateLight")
+                ser.write(b"changeStateLight\n")
+        time.sleep(0.5)
+    except:
+        print("Something went wrong")
 
 
 
-
-url = "yourUrlWebSite"
+url = os.getenv("URL_SEND_NOTIFICATION")
 
 # تنظیمات پورت سریال (باید مطابق با تنظیمات دستگاه سریال شما باشد)
 ser = serial.Serial(
@@ -68,6 +70,7 @@ if ser.is_open:
     print(f"Connected to {ser.portstr}")
 
 try:
+    timeToCheck=time.time()
     while True:
         if ser.in_waiting > 0:
 
@@ -80,7 +83,7 @@ try:
             if serialString.startswith('passwordChanged:'):
                 print("yes")
                 password = serialString.split('passwordChanged:')[1]
-                response = requests.post(url, data={'key': 'yourKey', 'action': 'passwordChanged','password': password})
+                response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'passwordChanged','password': password})
                 sendSMS("09139638917", password)
 
                 sendSMS("09132611899", password)
@@ -95,38 +98,41 @@ try:
                 ser.read_all()
 
             if serialString.startswith('openedDoor'):
-                response = requests.post(url, data={'key': 'yourKey', 'action': 'openedDoor'})
+                response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'openedDoor'})
 
                 ser.read_all()
                 print("Opened the door at:" + str(datetime.datetime.today()))
 
             if serialString.startswith('wrongPassword:'):
                 password = serialString.split('wrongPassword:')[1]
-                response = requests.post(url, data={'key': 'yourKey', 'action': 'wrongPassword','password': password})
+                response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'wrongPassword','password': password})
 
                 print("Wrong Password at:" + str(datetime.datetime.today()))
                 ser.read_all()
 
             if serialString.startswith('turnOnLight'):
-                response = requests.post(url, data={'key': 'yourKey', 'action': 'turnOnLight'})
+                response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'turnOnLight'})
 
                 print("Turned on light at:" + str(datetime.datetime.today()))
 
                 ser.read_all()
 
             if serialString.startswith('turnOffLight'):
-                response = requests.post(url, data={'key': 'yourKey', 'action': 'turnOffLight'})
+                response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'turnOffLight'})
 
                 print("Turned off light at:" + str(datetime.datetime.today()))
                 ser.read_all()
             
             if serialString.startswith('theDeviseIsReady'):
-                response = requests.post(url, data={'key': 'yourKey', 'action': 'theDeviseIsReady'})
+                response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'theDeviseIsReady'})
 
                 print("the Devise Is Ready:" + str(datetime.datetime.today()))
                 ser.read_all()
-
-            #checkDoorStatus()
+        else:
+            time.sleep(0.1)
+        if time.time()-timeToCheck>4:
+            timeToCheck=time.time()
+            checkDoorStatus()
             #ser.write(b"open\n")
 finally:
     ser.close()
