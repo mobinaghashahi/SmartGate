@@ -2,6 +2,8 @@
 #include <Keypad.h>            //معرفی کتابخانه کی پد//
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
+#include <ArduinoJson.h>
+
 
 SoftwareSerial bluetooth(4, 5 ); // RX | TX
 const byte ROWS = 4;    //مشخص کردن تعداد سطر کی پد//
@@ -84,16 +86,19 @@ void setup() {
 
   load_pass();
 
-  Serial.println("theDeviseIsReady");
+  StaticJsonDocument<200> doc;
+  doc["message"]="theDeviseIsReady";
+  serializeJson(doc, Serial);  // بدون newline
+  Serial.println(); 
 }
 void load_pass()
 {
   int e=0;
   for(e=0;e<=pass_lenght;e++)
   {
-    beep();
+    //beep();
     password[e]=EEPROM.read(e);
-    Serial.println(password[e]);
+    //Serial.println(password[e]);
   }
 }
 void save_pass(char pass[])
@@ -104,7 +109,12 @@ void save_pass(char pass[])
   }
   EEPROM.write(20,pass_lenght);
   beep(2,1);
-  Serial.println("passwordChanged:"+String(password));
+
+  StaticJsonDocument<200> doc;
+  doc["message"]="passwordChanged";
+  doc["password"]=String(password);
+  serializeJson(doc, Serial);  // بدون newline
+  Serial.println(); 
 }
 
 int check_pass(char entered_password[])
@@ -235,22 +245,32 @@ void beepKeyPad(){
     delay(100);
   }
 }
-void changeLightState(){
+void changeLightState(String whichUser){
+  StaticJsonDocument<200> doc;
+  
   if(digitalRead(A0)==HIGH)
   {
-      Serial.println("turnOnLight");
-      digitalWrite(A0,LOW); 
+    doc["whichUser"]=whichUser;
+    doc["message"] = "turnOnLight";
+       
+    //Serial.println("turnOnLight");
+    digitalWrite(A0,LOW); 
   }
   
   else if(digitalRead(A0)==LOW)
   {
-    Serial.println("turnOffLight");
+    doc["whichUser"]=whichUser;
+    doc["message"] = "turnOffLight";
+    //Serial.println("turnOffLight");
     digitalWrite(A0,HIGH);
   }
+  serializeJson(doc, Serial);  // بدون newline
+  Serial.println(); 
     
   beep(0.05,1);
 }
-void openDoor(int whichDoor){
+void openDoor(int whichDoor,String whichUser){
+  StaticJsonDocument<200> doc;
   int waitForOpenDoor=100;
   //open door 1
   if(whichDoor==1){
@@ -264,20 +284,35 @@ void openDoor(int whichDoor){
     delay(waitForOpenDoor);
     digitalWrite(A3,HIGH);
   }
-
+  doc["whichUser"]=whichUser;
+  doc["message"] = "openedDoor";
+  serializeJson(doc, Serial);  // بدون newline
+  Serial.println(); 
   //sendAlaramToPythonProgram
-  Serial.println("openedDoor");
+  //Serial.println("openedDoor");
 }
 
 void checkSerialCommands(){
+  
   if (Serial.available() > 0) {
-    Serial.println("a Serial Command Is Available");
-    String command = Serial.readStringUntil('\n');
-    if (command == "changeStateLight") {
-        changeLightState();
+    String message;
+    String whichUser;
+    String jsonString = Serial.readStringUntil('\n');
+    StaticJsonDocument<200> doc;
+    DeserializationError error = deserializeJson(doc, jsonString);
+    if (!error) {
+        message = doc["message"].as<String>();
+        whichUser = doc["whichUser"].as<String>();
+
+      } else {
+        Serial.println("خطا در دریافت JSON");
     }
-    else if (command == "openDoor1") {
-        openDoor(1);
+
+    if (message == "changeStateLight") {
+        changeLightState(whichUser);
+    }
+    else if (message == "openDoor1") {
+        openDoor(1,whichUser);
     }
   }
 }
@@ -293,17 +328,17 @@ void checkSerialCommands(){
 
 
 void loop() {
-
+  StaticJsonDocument<200> doc;
   //controled light By switch
   if(keyLightRoomState==0&&digitalRead(A2)==HIGH)
   {
     keyLightRoomState=1;
-    changeLightState();
+    changeLightState("lightSwitch");
   }
   if(keyLightRoomState==1&&digitalRead(A2)==LOW)
   {
     keyLightRoomState=0;
-    changeLightState();
+    changeLightState("lightSwitch");
   }
 
 
@@ -335,18 +370,21 @@ void loop() {
       if(check_pass(password_enter))
       {
         wrong_count=0;
-        openDoor(1);
+        openDoor(1,"keyPad");
         //sendAlaram
       }
       else if(check_pass2(password_enter))
       {
         wrong_count=0;
-        openDoor(2);
+        openDoor(2,"keyPad");
       }
       //پسوورد اشتباه وارد شده است
       else{
         wrong_count++;
-        Serial.println("wrongPassword:"+String(password_enter));
+        doc["message"] = "wrongPassword";
+        doc["wrongPassword"]=String(password_enter);
+        serializeJson(doc, Serial);  // بدون newline
+        Serial.println(); 
       }
       
       pass_change_count=0;
@@ -460,7 +498,7 @@ void loop() {
   else if(digitalRead(3)==LOW)
   {
     while(digitalRead(3)==LOW);
-    changeLightState();
+    changeLightState("bluetooth");
   }
  
   delay(100);

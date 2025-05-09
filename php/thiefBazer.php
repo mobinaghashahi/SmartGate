@@ -5,7 +5,7 @@ ini_set('display_errors', TRUE);
 ini_set('display_startup_errors', TRUE);
 
 
-$botToken = "addYourApiTelegram";
+$botToken = "7149956048:AAGTLQmHuRydQ-smsmzWxtIDXeDps1o9-_A";
 $webSite = "https://api.telegram.org/bot" . $botToken;
 
 $update = file_get_contents("php://input");
@@ -18,7 +18,7 @@ $message = $update["message"]["text"];
 
 date_default_timezone_set('Asia/Tehran');
 $today = date("D m j Y G:i:s");
-if($_POST['key']=="addYourKey"){
+if($_POST['key']=="Mobin.7060.mobin.ali.$#@!"){
 
     if($_POST['action']=="ringON"){
         //send Message to Mobin
@@ -47,19 +47,19 @@ if($_POST['key']=="addYourKey"){
         sendMessageToAll("یکی وارد خانه شد!! ");
     }
     else if($_POST['action']=="passwordChanged"){
-        sendMessageToAll("رمز عبور درب به: ".$_POST['password']."تغییر کرده است.");
+        sendMessageToAll("رمز عبور درب به: ".$_POST['password']." تغییر کرده است.");
     }
     else if($_POST['action']=="wrongPassword"){
         sendMessageToAll("رمز عبور اشتباه وارد شده است => ".$_POST['password']);
     }
     else if($_POST['action']=="openedDoor"){
-        sendMessageToAll("درب خانه باز شد ");
+        sendMessageToAll("درب خانه توسط  ".whichUser($_POST['whichUser'])." باز شد.");
     }
     else if($_POST['action']=="turnOnLight"){
-        sendMessageToAll("برق اتاق روشن شد. ");
+        sendMessageToAll("برق اتاق توسط  ".whichUser($_POST['whichUser'])." روشن شد.");
     }
     else if($_POST['action']=="turnOffLight"){
-        sendMessageToAll("برق اتاق خاموش شد. ");
+        sendMessageToAll("برق اتاق توسط  ".whichUser($_POST['whichUser'])." خاموش شد.");
     }
     else if($_POST['action']=="theDeviseIsReady"){
         sendMessageToAll("دستگاه آماده به کار است!! خیالت راحت باشه.");
@@ -100,18 +100,40 @@ function sendPhoto($chatId, $photoPath,$botToken)
 function sendMessageToAll($message){
     //send Message to Mobin
     sendMessage("159354346",$message);
-    //send Message to Sedighe
-    sendMessage("168232585",$message);
-    //send Message to Mahsa
-    sendMessage("128998617",$message);
-    //send Message to Mahdiyeh
-    sendMessage("126813675",$message);
-    //send Message to Moein
-    sendMessage("259898553",$message);
-    //send Message to AliReza
+    send Message to Sedighe
+  	sendMessage("168232585",$message);
+  	//send Message to Mahsa
+  	sendMessage("128998617",$message);
+  	//send Message to Mahdiyeh
+  	sendMessage("126813675",$message);
+  	//send Message to Moein
+  	sendMessage("259898553",$message);
+  	//send Message to AliReza
     sendMessage("284514919",$message);
-    //send Message to Mohadeseh
-    sendMessage("6505981674",$message);
+  	//send Message to Mohadeseh
+  	sendMessage("6505981674",$message);
 }
+function whichUser($whichUser){
+    if($whichUser==159354346)
+        return "مبین";
+    else if($whichUser==168232585)
+        return "صدیقه";
+    else if($whichUser==128998617)
+        return "مهسا";
+    else if($whichUser==126813675)
+        return "مهدیه";
+    else if($whichUser==259898553)
+        return "معین";
+    else if($whichUser==284514919)
+        return "علیرضا";
+    else if($whichUser==6505981674)
+        return "محدثه";
+    else if($whichUser=="bluetooth")
+        return "بلوتوث";
+    else if($whichUser=="lightSwitch")
+        return "کلید";
+    else if($whichUser=="keyPad")
+        return "کیبورد";
 
+}
 
