@@ -1,12 +1,12 @@
 <?php
-
+$config = require 'config.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', TRUE);
 ini_set('display_startup_errors', TRUE);
 
 
-$botToken = "7149956048:AAGTLQmHuRydQ-smsmzWxtIDXeDps1o9-_A";
+$botToken = $config['BOT_TOKEN'];
 $webSite = "https://api.telegram.org/bot" . $botToken;
 
 $update = file_get_contents("php://input");
@@ -19,13 +19,13 @@ $message = $update["message"]["text"];
 
 date_default_timezone_set('Asia/Tehran');
 $today = date("D m j Y G:i:s");
-if($_POST['key']=="Mobin.7060.mobin.ali.$#@!"){
+if($_POST['key']==$config['KEY_WEBSITE']){
 
     if($_POST['action']=="ringON"){
         //sendToNotificationUsers("یکی زنگ زد!! ");
         //send Message to Mobin
         //sendMessage("159354346","یکی زنگ زد!! ");
-        sendPhotoToNotificationUsers("uploads/1.jpg",$botToken);
+        sendPhotoToNotificationUsers($config['IMAGE_SOURCE'],$botToken);
         //send Message to Sedighe
         //sendMessage("168232585","یکی زنگ زد!! ");
         //sendPhoto(168232585, "uploads/1.jpg",$botToken);
@@ -87,10 +87,10 @@ function sendPhotoToNotificationUsers($photoPath,$botToken){
     $url = "https://api.telegram.org/bot$botToken/sendPhoto";
 
     $database = [
-        'host' => 'localhost',
-        'dbname' => 'adlyst_homeIOT',
-        'user' => 'adlyst_mobin',
-        'pass' => 'Mobin-mobin7060'
+        'host' => $config['DB_HOST'],
+        'dbname' => $config['DB_NAME'],
+        'user' => $config['DB_USER'],
+        'pass' => $config['DB_PASSWORD']
     ];
 
     try {
@@ -168,10 +168,10 @@ function sendMessageToAll($message){
 }
 function sendToNotificationUsers($message){
     $database = [
-        'host' => 'localhost',
-        'dbname' => 'adlyst_homeIOT',
-        'user' => 'adlyst_mobin',
-        'pass' => 'Mobin-mobin7060'
+        'host' => $config['DB_HOST'],
+        'dbname' => $config['DB_NAME'],
+        'user' => $config['DB_USER'],
+        'pass' => $config['DB_PASSWORD']
     ];
 
     try {
@@ -208,10 +208,10 @@ function sendToNotificationUsers($message){
 }
 function whichUser($whichUser){
     $database = [
-        'host' => 'localhost',
-        'dbname' => 'adlyst_homeIOT',
-        'user' => 'adlyst_mobin',
-        'pass' => 'Mobin-mobin7060'
+        'host' => $config['DB_HOST'],
+        'dbname' => $config['DB_NAME'],
+        'user' => $config['DB_USER'],
+        'pass' => $config['DB_PASSWORD']
     ];
 
     try {
@@ -221,10 +221,10 @@ function whichUser($whichUser){
     }
 
     $database = [
-        'host' => 'localhost',
-        'dbname' => 'adlyst_homeIOT',
-        'user' => 'adlyst_mobin',
-        'pass' => 'Mobin-mobin7060'
+        'host' => $config['DB_HOST'],
+        'dbname' => $config['DB_NAME'],
+        'user' => $config['DB_USER'],
+        'pass' => $config['DB_PASSWORD']
     ];
 
     try {
