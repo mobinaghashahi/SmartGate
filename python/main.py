@@ -16,7 +16,7 @@ def sendSMS(number, password):
     # URL API
     urlSMS = os.getenv("URL_SMS_PANEL")
 
-    # ???????? JSON ?? ???? ????? ????
+
     payload = {
         "code": os.getenv("API_KEY_SMS_PANEL"),
         "sender": "+983000505",
@@ -31,8 +31,9 @@ def sendSMS(number, password):
         "apikey": os.getenv("API_KEY_SMS_BOT"),  # ??????? ?? API Key ?????
         "Content-Type": "application/json"
     }
-    # ????? ??????? POST
+
     response = requests.post(urlSMS, json=payload, headers=headers)
+
     if response.status_code == 200:
         print("SMS sent to " + number)
     print(response.status_code)
@@ -76,6 +77,16 @@ def sendMessageToTelegram(action,whichUser):
     response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': action,'whichUser': whichUser})
     print(response.status_code)
 
+def saveLogsEvent(action,date):
+
+    try:
+        conn = sqlite3.connect('mydb.db')
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', (action, date))
+        conn.commit()
+    except:
+        print("Something went wrong in DataBase")
+
 
 url = os.getenv("URL_SEND_NOTIFICATION")
 
@@ -102,13 +113,13 @@ try:
             now = datetime.datetime.now()
             date_str = now.strftime('%Y-%m-%d %H:%M')
 
-            conn = sqlite3.connect('mydb.db')
-            cursor = conn.cursor()
+            ##conn = sqlite3.connect('mydb.db')
+            ##cursor = conn.cursor()
 
             if line:
                 try:
                     data = json.loads(line)
-                    print("داده دریافتی:", data)
+                    print("Data is: ", data)
 
                     if isinstance(data, dict):  # فقط اگر داده یک دیکشنری بود
                         if data.get("message") == "passwordChanged":
@@ -125,19 +136,22 @@ try:
                             sendSMS("09371126018", password)
                         elif data.get("message") == "openedDoor":
                             sendMessageToTelegram('openedDoor',data.get("whichUser"))
-                            cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('openedDoor', date_str))
+                            saveLogsEvent('openedDoor',date_str)
+                            #cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('openedDoor', date_str))
                             print("Opened the door at:" + str(datetime.datetime.today()))
                         elif data.get("message") == "wrongPassword":
                             password = data.get("wrongPassword")
                             response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'wrongPassword',
                                                                 'password': password})
-                            cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('wrongPassword', date_str))
+                            saveLogsEvent('wrongPassword', date_str)
+                            #cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('wrongPassword', date_str))
 
                             print("Wrong Password at:" + str(datetime.datetime.today()))
                         elif data.get("message")=='theDeviseIsReady':
                             sendMessageToTelegram('theDeviseIsReady',"")
 
-                            cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('theDeviseIsReady', date_str))
+                            saveLogsEvent('theDeviseIsReady', date_str)
+                            #cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('theDeviseIsReady', date_str))
                             checkDoorStatusPermission=True
                             timeToCheck = time.time()
 
@@ -145,15 +159,16 @@ try:
 
                         elif data.get("message") == "turnOnLight":
                             sendMessageToTelegram('turnOnLight',data.get("whichUser"))
-                            cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('trunOnLight', date_str))
+                            saveLogsEvent('trunOnLight', date_str)
+                            #cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('trunOnLight', date_str))
                             print("Turned on light at:" + str(datetime.datetime.today()))
 
                         elif data.get("message") == "turnOffLight":
                             sendMessageToTelegram('turnOffLight',data.get("whichUser"))
-
-                            cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)',('trunOffLight', date_str))
+                            saveLogsEvent('trunOffLight', date_str)
+                            #cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)',('trunOffLight', date_str))
                             print("Turned off light at:" + str(datetime.datetime.today()))
-                        conn.commit()
+                        #conn.commit()
                     else:
                         print("⚠️ داده JSON هست ولی دیکشنری نیست:", data)
 
