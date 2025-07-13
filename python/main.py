@@ -44,7 +44,7 @@ def checkDoorStatus():
     try:
         print("enter to checkDoorStatus")
         url = os.getenv("URL_CHECK_DOOR_STATUS")
-        response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE")})
+        response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE")},timeout=6)
         print(response.status_code)
         if response.status_code == 200:
             print("Response OK!!")
@@ -72,9 +72,10 @@ def checkDoorStatus():
                 ser.write((json_data + "\n").encode())
                 print("changeStateLight")
     except:
-        print("Something went wrong")
+        print("Something went wrong in checkDoorStatus.")
+        return 0
 def sendMessageToTelegram(action,whichUser):
-    response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': action,'whichUser': whichUser})
+    response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': action,'whichUser': whichUser},timeout=6)
     print(response.status_code)
 
 def saveLogsEvent(action,date):
@@ -121,11 +122,11 @@ try:
                     data = json.loads(line)
                     print("Data is: ", data)
 
-                    if isinstance(data, dict):  # فقط اگر داده یک دیکشنری بود
+                    if isinstance(data, dict):  # ??? ??? ???? ?? ??????? ???
                         if data.get("message") == "passwordChanged":
                             password=data.get("password")
                             response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'passwordChanged',
-                                                                'password': password})
+                                                                'password': password},timeout=6)
                             sendSMS("09139638917", password)
                             sendSMS("09132611899", password)
                             sendSMS("09132616941", password)
@@ -142,7 +143,7 @@ try:
                         elif data.get("message") == "wrongPassword":
                             password = data.get("wrongPassword")
                             response = requests.post(url, data={'key': os.getenv("API_KEY_WEBSITE"), 'action': 'wrongPassword',
-                                                                'password': password})
+                                                                'password': password},timeout=6)
                             saveLogsEvent('wrongPassword', date_str)
                             #cursor.execute('INSERT INTO events (action, date) VALUES (?, ?)', ('wrongPassword', date_str))
 
@@ -170,12 +171,12 @@ try:
                             print("Turned off light at:" + str(datetime.datetime.today()))
                         #conn.commit()
                     else:
-                        print("⚠️ داده JSON هست ولی دیکشنری نیست:", data)
+                        print("?? ???? JSON ??? ??? ??????? ????:", data)
 
                 except json.JSONDecodeError:
-                    print("❌ JSON نامعتبر:", repr(line))
+                    print("? JSON ???????:", repr(line))
             else:
-                print("⛔ دریافت خط خالی")
+                print("? ?????? ?? ????")
 
 
 
