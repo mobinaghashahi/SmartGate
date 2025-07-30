@@ -1,11 +1,6 @@
 <?php
+require 'config.php';
 
-$database = [
-    'host' => 'localhost',
-    'dbname' => 'adlyst_homeIOT',
-    'user' => 'adlyst_mobin',
-    'pass' => 'Mobin-mobin7060'
-];
 
 try {
     $db = new PDO("mysql:host={$database['host']};dbname={$database['dbname']}", $database['user'], $database['pass']);
@@ -18,7 +13,7 @@ ini_set('display_errors', TRUE);
 ini_set('display_startup_errors', TRUE);
 
 
-$botToken = "7149956048:AAGTLQmHuRydQ-smsmzWxtIDXeDps1o9-_A";
+
 $webSite = "https://api.telegram.org/bot" . $botToken;
 
 $update = file_get_contents("php://input");
@@ -27,7 +22,6 @@ $update = json_decode($update, TRUE);
 $chatId = $update["message"]["chat"]["id"];
 $message = $update["message"]["text"];
 
-global $db;
 
 $sql = "SELECT * FROM users WHERE telegramID = :chatID";
 $stmt = $db->prepare($sql);
@@ -40,16 +34,37 @@ print_r($row);
 
 
 if($row){
-    if (strpos($message, "help") === 0) {
-        sendMessage($chatId,"لیست دستورات مجاز برای استفاده در ربات\n adduser:username-displayName-telegramID-isAdmin-accessDoor-accessLight-notification");
+    if (strpos($message, "help") === 0 ||strpos($message, "Help") === 0) {
+        $helpText="لیست دستورات مجاز برای استفاده در ربات
+
+|دیدن تمام کاربرها|
+
+allUsers
+------------------------------------------------------------
+|اضافه کردن کابر جدید|
+
+addUser:username-displayName-telegramID-isAdmin-accessDoor-accessLight-notification
+------------------------------------------------------------
+|به روزرسانی کاربرها|
+
+updateUser:id-username-displayName-telegramID-isAdmin-accessDoor-accessLight-notification
+------------------------------------------------------------
+|خاموش کردن اعلان پیام تمام کاربران|
+
+offNotification
+------------------------------------------------------------
+|روشن کردن اعلان پیام تمام کاربران|
+
+onNotification";
+        sendMessage($chatId,$helpText);
     }
-    else if (strpos($message, "adduser:") === 0) {
+    else if (strpos($message, "addUser:") === 0) {
         if($row['isAdmin']){
-            $data = str_replace("adduser:", "", $message);
+            $data = str_replace("addUser:", "", $message);
             $parts = explode("-", $data);
             if (count($parts) === 7) {
                 list($username,$displayName, $telegramID,$isAdmin ,$haveDoorPermission ,$haveLightPermission,$notification) = $parts;
-    
+
                 $sql = "INSERT INTO users (username,displayName, telegramID,isAdmin, haveDoorPermission, haveLightPermission,notification ) 
                         VALUES (:username,:displayName, :telegramID,:isAdmin, :haveDoorPermission, :haveLightPermission,:notification)";
                 $stmt = $db->prepare($sql);
@@ -69,13 +84,14 @@ if($row){
             }
         }
     }
-    else if (strpos($message, "updateuser:") === 0) {
+    else if (strpos($message, "updateUser:") === 0) {
         if ($row['isAdmin']) {
-            $data = str_replace("updateuser:", "", $message); // ← اصلاح کلید دستوری
+            $data = str_replace("updateUser:", "", $message); // ← اصلاح کلید دستوری
             $parts = explode("-", $data);
             if (count($parts) === 8) {
                 list($id,$username,$displayName, $telegramID,$isAdmin ,$haveDoorPermission ,$haveLightPermission,$notification) = $parts;
-    
+
+
                 $sql = "UPDATE users 
                         SET username = :username,
                             displayName = :displayName,
@@ -85,7 +101,7 @@ if($row){
                             haveLightPermission = :haveLightPermission,
                             notification = :notification
                         WHERE id = :id";
-                        
+
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam(':username', $username);
                 $stmt->bindParam(':displayName', $displayName);
@@ -96,14 +112,14 @@ if($row){
                 $stmt->bindParam(':notification', $notification);
                 $stmt->bindParam(':id', $id);
                 $stmt->execute();
-    
+
                 sendMessage($chatId, "✅ اطلاعات کاربر '$username' بروزرسانی شد.");
             } else {
                 sendMessage($chatId, "❌ دستور وارد شده اشتباه است. برای راهنمایی، کلمه help را ارسال کنید.");
             }
         }
     }
-    else if (strpos($message, "allusers") === 0) {
+    else if (strpos($message, "allUsers") === 0) {
         if ($row['isAdmin']) {
             $sql = "SELECT * FROM users";
             $stmt = $db->prepare($sql);
@@ -113,16 +129,47 @@ if($row){
             $allUsers="";
             foreach ($rows as $row){
                 $allUsers.="id: " . $row['id'] ."|".
-                " username: " . $row['userName'] ."|".
-                " telegramID: " . $row['telegramID'] ."|".
-                " displayName: " . $row['displayName'] ."|".
-                " isAdmin: " . $row['isAdmin'] ."|".
-                " haveDoorPermission: " . $row['haveDoorPermission'] ."|".
-                " haveLightPermission: " . $row['haveLightPermission']."|".
-                " notification: " . $row['notification']."\n";
+                    " username: " . $row['userName'] ."|".
+                    " telegramID: " . $row['telegramID'] ."|".
+                    " displayName: " . $row['displayName'] ."|".
+                    " isAdmin: " . $row['isAdmin'] ."|".
+                    " haveDoorPermission: " . $row['haveDoorPermission'] ."|".
+                    " haveLightPermission: " . $row['haveLightPermission']."|".
+                    " notification: " . $row['notification']."\n----------------------\n";
             }
             sendMessage($chatId,$allUsers);
         }
+    }
+    else if (strpos($message, "offNotification") === 0) {
+        if ($row['isAdmin']) {
+            $sql = "UPDATE users 
+                        SET
+                            notification = 0";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            sendMessage($chatId,"اعلان پیام ها برای تمام کاربرها قطع شد.");
+
+        }else {
+            sendMessage($chatId, "❌ دستور وارد شده اشتباه است. برای راهنمایی، کلمه help را ارسال کنید.");
+        }
+
+
+    }
+    else if (strpos($message, "onNotification") === 0) {
+        if ($row['isAdmin']) {
+            $sql = "UPDATE users 
+                        SET
+                            notification = 1";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            sendMessage($chatId,"اعلان پیام ها برای تمام کاربرها وصل شد.");
+        }else {
+            sendMessage($chatId, "❌ دستور وارد شده اشتباه است. برای راهنمایی، کلمه help را ارسال کنید.");
+        }
+
+
     }
 
     else if($message=="open"||$message=="Open"){
@@ -147,12 +194,12 @@ if($row){
         else{
             sendPermissionDeniedMessage($chatId);
         }
-        
+
     }
     else{
         sendMessage($chatId,"دستور وارد شده اشتباه است.");
     }
-  	
+
 }
 else
     sendMessage($chatId,"دسترسی شما به این ربات غیر مجاز است.");
