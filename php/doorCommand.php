@@ -122,13 +122,20 @@ if (isset($update["callback_query"])) {
 
         return 0;
     }
-}
-
-else {
+} else {
     $chatId = $update["message"]["chat"]["id"];
     $message = $update["message"]["text"];
 
+
     if (havePermissionToBot($chatId)) {
+        if (preg_match('/^addUser:(\d+):([^:]+):([^:]+)$/', $message, $matches)) {
+            $telegramID = $matches[1];
+            $userName= $matches[2];
+            $displayName = $matches[3];
+            addNewUser($chatId, $userName, $displayName, $telegramID);
+        }
+
+
         $row = getUserByChatID($chatId);
         //دستور خاموش شدن چراغ وارد شده است
         if ($message == $commands['light'])
@@ -334,6 +341,23 @@ onNotification";
 } else
     sendMessage($chatId, "دسترسی شما به این ربات غیر مجاز است.");
 
+function addNewUser($chatId, $username, $displayName, $telegramID)
+{
+    if (isAdmin($chatId)) {
+        global $db;
+        $sql = "INSERT INTO users (username,displayName, telegramID ) 
+                        VALUES (:username,:displayName, :telegramID)";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':displayName', $displayName);
+        $stmt->bindParam(':telegramID', $telegramID);
+        $stmt->execute();
+
+        sendMessage($chatId, "کاربر با موفقیت افزوده شد.");
+    } else {
+        sendPermissionDeniedMessage($chatId);
+    }
+}
 
 function isAdmin($chatId)
 {
