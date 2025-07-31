@@ -66,6 +66,13 @@ if (isset($update["callback_query"])) {
             changeNotificationPermission($chatId, $telegramID);
             $callbackData = $telegramID;
 
+        }else if (strpos($callbackData, "deleteUser_") === 0) {
+            $telegramID = substr($callbackData, strlen("deleteUser_"));
+            //sendMessage($chatId,$telegramID);
+            deleteUser($chatId, $telegramID);
+            answerCallbackQuery($callbackQueryId, 'کاربر با موفقیت حذف شد.');
+            showAllUsersList($chatId, getUserByChatID($chatId), $commands);
+
         } else if (strpos($callbackData, "back") === 0) {
             answerCallbackQuery($callbackQueryId, 'در حال پردازش...');
             showAllUsersList($chatId, getUserByChatID($chatId), $commands);
@@ -74,12 +81,13 @@ if (isset($update["callback_query"])) {
         $senderInformation = getUserByChatID($chatId);
         $userInformation = getUserByChatID($callbackData);
 
-        $messageText = 'شما در حال تغییر تنظیمات ' . $userInformation['displayName'] . ' هستید. برای تغییر هر یک از موارد زیر برروی آن ها کلیک کنید.';
+        $messageText = 'شما در حال تغییر تنظیمات کابری به نام ' . $userInformation['displayName'] . ' هستید. برای تغییر هر یک از موارد زیر برروی آن ها کلیک کنید.';
 
         $statusAdmin = $userInformation['isAdmin'] == '1' ? 'کاربر ادمین' : 'کاربر عادی';
         $statusDoorPermission = $userInformation['haveDoorPermission'] == '1' ? '✅ دسترسی به درب دارد' : '❌ دسترسی به درب ندارد';
         $statusLightPermission = $userInformation['haveLightPermission'] == '1' ? '✅ می تواند چراغ را خاموش کند' : '❌ نمی تواند چراغ را خاموش کند';
         $statusNotificationPermission = $userInformation['notification'] == '1' ? '👁️ اعلان ها را می بیند' : '🙈 اعلان ها را نمی بیند';
+        $deleteUser = '❌حذف کاربر❌';
 
         $rowButtons = [
             [
@@ -106,6 +114,12 @@ if (isset($update["callback_query"])) {
                 [
                     'text' => $statusNotificationPermission,
                     'callback_data' => 'updateNotification_' . $userInformation['telegramID']
+                ]
+            ],
+            [
+                [
+                    'text' => $deleteUser,
+                    'callback_data' => 'deleteUser_' . $userInformation['telegramID']
                 ]
             ],
             [
@@ -500,7 +514,14 @@ function changeLightPermission($chatId = "", $telegramID)
     $stmt->execute();
     return;
 }
-
+function deleteUser($chatId, $telegramID){
+    global $db;
+    $sql = "delete from users WHERE telegramID = :telegramID";
+    $stmt = $db->prepare($sql);
+    $stmt->bindParam(':telegramID', $telegramID);
+    $stmt->execute();
+    return ;
+}
 function changeNotificationPermission($chatId = "", $telegramID)
 {
     global $db;
